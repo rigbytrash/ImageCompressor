@@ -1,10 +1,57 @@
-# Image Compress Project
+# Image Compression and Conversion Tool
 
-This software will convert image data from one file format to another. It makes use of bit-packing.
+This is a C-based image compression and conversion tool that works with three custom grayscale image file formats: **ebf** (text-based), **ebu** (binary), and **ebc** (compressed binary). The tool provides utilities to convert between formats, compare images, and echo/validate image files.
 
-This project has been taken from my private university github account, so commit history/comments are often wrong
+## Features
 
-Some more info is below.
+- **Format Conversion**: Convert between ebf, ebu, and ebc formats
+- **Image Comparison**: Compare two images of the same format for equality
+- **File Validation**: Echo/validate image files by reading and rewriting them
+- **Compression**: Compress images using 5-bit pixel packing (ebf → ebc)
+- **Error Handling**: Comprehensive error checking for file format validation
+
+## Available Programs
+
+The project compiles into 10 executable programs:
+
+### Conversion Tools
+- `ebf2ebu` - Convert ebf (text) to ebu (binary) format
+- `ebu2ebf` - Convert ebu (binary) to ebf (text) format  
+- `ebu2ebc` - Convert ebu (binary) to ebc (compressed) format
+- `ebc2ebu` - Convert ebc (compressed) to ebu (binary) format
+
+### Comparison Tools
+- `ebfComp` - Compare two ebf files for identical content
+- `ebuComp` - Compare two ebu files for identical content
+- `ebcComp` - Compare two ebc files for identical content
+
+### Echo/Validation Tools
+- `ebfEcho` - Read and rewrite an ebf file (validation)
+- `ebuEcho` - Read and rewrite an ebu file (validation)
+- `ebcEcho` - Read and rewrite an ebc file (validation)
+
+## Build Instructions
+
+```bash
+make          # Build all executables
+make clean    # Remove compiled files
+```
+
+## Usage
+
+All programs follow a similar usage pattern:
+```bash
+./program_name input_file output_file
+```
+
+Examples:
+```bash
+./ebf2ebu sample_images/square.ebf square.ebu
+./ebfComp sample_images/square.ebf sample_images/dodo.ebf
+./ebfEcho sample_images/square.ebf output.ebf
+```
+
+## Error Codes and Messages
 
 | Value  | String | Condition |
 | ------------- | ------------- | ------------- |
@@ -18,52 +65,59 @@ Some more info is below.
 | 100 | ERROR: Miscellaneous (describe) | Any other error which is detected |
 
 
-| String | Condition |
+## Program Output Messages
+
+| Message | Condition |
 | ------------- | ------------- |
-| Usage: executablename file1 file2 | Program run with no arguments |
-| ECHOED | xEcho file successfully completes |
-| IDENTICAL | xComp file successfully completes and files are identical |
-| DIFFERENT | xComp file successfully completes and files are not identical |
-| CONVERTED | x2y file successfully completes |
+| `Usage: executablename file1 file2` | Program run with incorrect arguments |
+| `ECHOED` | Echo program successfully validates and rewrites file |
+| `IDENTICAL` | Comparison program finds files are identical |
+| `DIFFERENT` | Comparison program finds files are different |
+| `CONVERTED` | Conversion program successfully converts file |
 
-Usage messages are also a Unix convention - when an executable is run with no arguments, it is assumed that the user does not know the correct syntax and wishes to see a prompt. As this is not an error state, the return value is 0.
+## File Format Specifications
 
-# File Format Details
+All three file formats store grayscale images with pixel values ranging from 0-31 (5 bits per pixel).
 
-The three file formats are ebf, ebu and ebc - these are all **new file formats** which have been created for this project.
+## ebf files (Text Format)
 
-You have some sample ebf files available in the sample_images folder.
+ebf files store images in human-readable text format:
 
-## ebf files
-
-ebf files are a basic greyscale image file. They contain a short header of metadata, followed by pixel values. The basic format is as follows:
+ebf files store images in human-readable text format:
 
 ```
-eb              - this is the magic number - for ebf files this is always eb.
-height width    - two space-separated integers which give the height and width of the image.
-p1 p2 p3 ...    - the pixel data which is separated by spaces. This is usually (but not always) separated into rows by a newline.
+eb              - Magic number (always "eb")
+height width    - Dimensions as space-separated integers
+p1 p2 p3 ...    - Pixel values (0-31) separated by spaces
 ```
 
-ebf files have a maximum pixel value of 31.
+**Example**: `sample_images/square.ebf` contains an 8x8 square pattern.
 
-## ebu files
+## ebu files (Binary Format)
 
-ebu (ebf uncompressed) are the binary equivalent of ebf files. They have a very similar header (written in ASCII) followed by the pixel data written out as **binary**. If you open an ebu file in a text editor, you will generally see a random string of data as it is not encoded in a human-readable format.
-
-```
-eu
-height width
-p1 p2 p3 ...
-```
-
-ebc files have a maximum pixel value of 31.
-
-## ebc files
-
-ebc (ebf compressed) are compressed binary ebf files. They also have a similar header, but the pixel data is written out in **compressed** binary. As ebf files have a maximum pixel value of 31, each pixel can be represented by **5 bits of binary**. C can only write out blocks of 8 bits (1 byte) at once, so the algorithm packs pixel data into the minimum number of bytes. This should compress an ebu file to just over 0.6 times its original size.
+ebu (ebf uncompressed) files store the same data in binary format for more efficient storage:
 
 ```
-ec
-height width
-packed binary pixel data
+eu              - Magic number (always "eu")
+height width    - Dimensions in ASCII text
+<binary data>   - Pixel values stored as binary bytes
 ```
+
+## ebc files (Compressed Binary Format)
+
+ebc (ebf compressed) files use bit-packing compression. Since pixels only need 5 bits (0-31), multiple pixels are packed into single bytes:
+
+```
+ec              - Magic number (always "ec")
+height width    - Dimensions in ASCII text  
+<packed data>   - Compressed pixel data (5 bits per pixel packed into bytes)
+```
+
+The compression algorithm packs 8 pixels into every 5 bytes (8 × 5 = 40 bits = 5 bytes), achieving approximately 62.5% of the original ebu file size.
+
+## Sample Images
+
+The `sample_images/` directory contains example ebf files:
+- `square.ebf` - Simple 8x8 square pattern
+- `dodo.ebf` - 40x40 complex image
+- `duck.ebf`, `feep.ebf`, `gradient.ebf`, etc. - Various test images
